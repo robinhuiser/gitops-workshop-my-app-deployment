@@ -1,57 +1,100 @@
 # Hands-On
 
-### 1. Install Kustomize
+Deploy the sample Golang application [my-app](https://github.com/robinhuiser/my-app) in Kubernetes using GitOps principles.
 
-```
-brew install kustomize
-kustomize version
-```
+> Based upon [Tutorial: Everything You Need To Become a GitOps Ninja - Alex Collins & Alexander Matyushentsev](https://www.youtube.com/watch?v=r50tRQjisxw), modified for the video series "Bank of Pi" to explain the concept of GitOps.
 
-### 2. Fork The Example Repo
+## Setup
 
-* Open https://github.com/gitops-workshop/my-app-deployment
-* Click “Fork”. 
+1. Install the following utils:
+   
+   ~~~bash
+   # Install Kustomize using brew https://brew.sh/
+   $ brew install kustomize
 
-### 3. Clone Your Fork
+   # Check the version (> 4.x)
+   $ kustomize version
+   ~~~
 
-In your terminal:
+2. Fork the example repo
 
-```bash
-export username=... ;# your Github username in lowercase
-git clone git@github.com:${username}/my-app-deployment.git
-cd my-app-deployment
-```
+   * Open https://github.com/robinhuiser/my-app-deployment
+   * Click “Fork”. 
 
-### 4. Build The Base
+3. Clone your fork
 
-```
-kustomize build base
-```
+   ~~~bash
+   # Set your username in an environment variable
+   # This variable is later used to define Kubernetes resources
+   export username=... ;# your Github username in lowercase
 
-Note: The above URL should start with "git@" and you'll need to enter your username.
+   # Clone and change into the directory
+   $ git clone git@github.com:${username}/my-app-deployment.git
+   $ cd my-app-deployment
+   ~~~
 
-### 5. Create An Overlay
+> Assure you have [published you SSH public key](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account) for your GitHub account
 
-```bash
-mkdir -p overlays/dev
-```
+## Initial build
 
-```bash
-cat > overlays/dev/kustomization.yaml <<EOL
+First, we verify if our base configuration is working before creating any environment specific settings in next steps.
+
+~~~bash
+$ kustomize build base
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+spec:
+  containers:
+  - image: registry.tekqube.lan:32000/gitops-workshop/my-app:v1
+    imagePullPolicy: IfNotPresent
+    name: main
+~~~
+
+Next, we'll create an overlay directory:
+
+~~~bash
+$ mkdir -p overlays/dev
+~~~
+
+... and create the file `kustomization.yaml` under this directory to define changes we are about to apply compared to the base configuration:
+
+~~~bash
+# Create the initial version of our kustomization definition
+$ cat > overlays/dev/kustomization.yaml <<EOL
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
 EOL
-```
+~~~
 
-```bash
-kustomize build overlays/dev
-git add . && git commit -am "add dev overlay"
-git push
-```
+Let's see if the build is happy and push to git:
 
-### 6. Change The Name Prefix
+~~~bash
+# Test
+$ kustomize build overlays/dev
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+spec:
+  containers:
+  - image: registry.tekqube.lan:32000/gitops-workshop/my-app:v1
+    imagePullPolicy: IfNotPresent
+    name: main
+
+# Push to git
+$ git add . && git commit -am "add dev overlay"
+$ git push
+~~~
+
+> As you could see, the overlay outputs (for now) the same as the base configuration - this is just the starting point for modifications in the next chapters.
+
+## Lab 1: Change the name prefix
 
 ```
 cd overlays/dev

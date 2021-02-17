@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
 - ../../base
 namePrefix: robinhuiser-
+images:
+- name: registry.tekqube.lan:32000/gitops-workshop/my-app
+  newTag: v2
